@@ -1,24 +1,9 @@
-from flask import Flask, render_template
-
-app = Flask(__name__)
-
-@app.route('/')
-def home():
-    return render_template('form.html')  # Isso renderiza o seu form.html
-
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)  # Certifique-se de que está rodando com o host '0.0.0.0' para funcionar no Render
-
-
-
-
-
 from flask import Flask, render_template, request, redirect, url_for
 from flask_mail import Mail, Message
 
 app = Flask(__name__)
 
-# Configurações do Flask-Mail
+# Configuração do Flask-Mail
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
@@ -28,7 +13,7 @@ app.config['MAIL_DEFAULT_SENDER'] = 'seuemail@gmail.com'
 
 mail = Mail(app)
 
-@app.route('/')
+@app.route('/', methods=['GET'])
 def home():
     return render_template('form.html')
 
