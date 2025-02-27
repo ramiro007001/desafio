@@ -20,6 +20,7 @@ def home():
 @app.route('/send_email', methods=['POST'])
 def send_email():
     try:
+        # Recebe os dados do formulário
         name = request.form['name']
         email = request.form['email']
         phone = request.form['phone']
@@ -33,7 +34,7 @@ def send_email():
         mail.send(msg)
 
         # Redireciona para a página de sucesso após enviar
-        return render_template('success.html')  
+        return render_template('success.html')  # A página de sucesso deve estar no diretório correto
 
     except Exception as e:
         return f'Erro ao enviar mensagem: {e}'
