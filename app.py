@@ -9,7 +9,7 @@ app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USERNAME'] = 'ramirex9@gmail.com'  # Seu e-mail
 app.config['MAIL_PASSWORD'] = 'dosw kveq qxlv aelt'  # Sua senha de app
-app.config['MAIL_DEFAULT_SENDER'] = 'SEU_EMAIL@gmail.com'
+app.config['MAIL_DEFAULT_SENDER'] = 'ramirex9@gmail.com'
 
 mail = Mail(app)
 
@@ -25,11 +25,15 @@ def send_email():
         phone = request.form['phone']
         message = request.form['message']
 
+        # Enviar para dois e-mails
         msg = Message(f'Novo contato de {name}', recipients=['ramirex9@gmail.com', 'ramirohd@gmail.com'])
         msg.body = f'Nome: {name}\nEmail: {email}\nTelefone: {phone}\nMensagem: {message}'
 
+        # Enviar o e-mail
         mail.send(msg)
-        return render_template('success.html')  # Redireciona para a página de sucesso
+
+        # Redireciona para a página de sucesso após enviar
+        return render_template('success.html')  
 
     except Exception as e:
         return f'Erro ao enviar mensagem: {e}'
