@@ -27,7 +27,7 @@ def send_email():
     try:
         msg = Message("Novo contato do formulário",
                       sender=app.config['MAIL_USERNAME'],
-                      recipients=["ramirex9@gmail.com"])  # E-mail que vai receber
+                      recipients=["ramirex9@gmail.com", "ramirohd@gmail.com"])  # E-mail que vai receber
 
         msg.body = f"""
         Nome: {nome}
