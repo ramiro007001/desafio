@@ -1,3 +1,4 @@
+import os
 from flask import Flask, render_template, request, redirect, url_for
 import smtplib
 from email.mime.text import MIMEText
@@ -32,10 +33,11 @@ def send_email():
         return "E-mail inválido!", 400
 
     # Configurações do servidor de e-mail
-    sender_email = "ramirex9@gmail.com"
-    sender_password = "dosw kveq qxlv aelt"
-    receiver_email_1 = "ramirex9@gmail.com"
-    receiver_email_2 = "ramirohd@gmai.com"
+    sender_email = "ramirex9@gmail.com"  # Substitua com seu e-mail
+    sender_password = "dosw kveq qxlv aelt"  # Substitua com sua senha de app
+    receiver_email_1 = "ramirex9@gmail.com"  # E-mail principal
+    receiver_email_2 = "ramirohd@gmail.com"  # E-mail secundário
+
     # Preparando a mensagem
     subject = "Novo Formulário de Contato"
     body = f"Nome: {name}\nE-mail: {email}\nTelefone: {phone}\nMensagem: {message}"
@@ -66,4 +68,6 @@ def success():
     return render_template('success.html')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Usar a porta fornecida pelo Render (ou qualquer outro serviço de hospedagem)
+    port = os.environ.get('PORT', 5000)
+    app.run(host='0.0.0.0', port=port, debug=True)
