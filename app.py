@@ -1,43 +1,70 @@
-from flask import Flask, render_template, request
-from flask_mail import Mail, Message
+from flask import Flask, render_template, request, redirect, url_for
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 app = Flask(__name__)
 
-# Configurações do Flask-Mail
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_PORT'] = 587
-app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'ramirex9@gmail.com'  # Seu e-mail
-app.config['MAIL_PASSWORD'] = 'dosw kveq qxlv aelt'  # Sua senha de app
-app.config['MAIL_DEFAULT_SENDER'] = 'ramirex9@gmail.com'
+# Defina as credenciais e configurações do e-mail
+EMAIL_SENDER = "ramirex9@gmail.com"
+EMAIL_PASSWORD = "dosw kveq qxlv aelt"  # Insira aqui a senha do aplicativo do Gmail
+EMAIL_RECEIVER = "ramirex9@gmail.com"  # Insira o primeiro e-mail
+EMAIL_RECEIVER_2 = "ramirohd@gmai.com"  # Insira o segundo e-mail
 
-mail = Mail(app)
+# Rota para o formulário
+@app.route("/", methods=["GET", "POST"])
+def form():
+    if request.method == "POST":
+        # Coleta os dados do formulário
+        nome = request.form.get("nome")
+        email = request.form.get("email")
+        telefone = request.form.get("telefone")
+        mensagem = request.form.get("mensagem")
 
-@app.route('/')
-def home():
-    return render_template('form.html')
+        # Envia o email com os dados do formulário
+        send_email(nome, email, telefone, mensagem)
+        return redirect(url_for("success"))  # Redireciona para a página de sucesso
+    return render_template("form.html")
 
-@app.route('/send_email', methods=['POST'])
-def send_email():
+# Rota para a página de sucesso
+@app.route("/success")
+def success():
+    return render_template("success.html")  # Exibe a página de sucesso
+
+# Função para enviar o email
+def send_email(nome, email, telefone, mensagem):
     try:
-        # Recebe os dados do formulário
-        name = request.form['name']
-        email = request.form['email']
-        phone = request.form['phone']
-        message = request.form['message']
+        # Configuração do servidor SMTP do Gmail
+        server = smtplib.SMTP_SSL("smtp.gmail.com", 465)
+        server.login(EMAIL_SENDER, EMAIL_PASSWORD)
 
-        # Enviar para dois e-mails
-        msg = Message(f'Novo contato de {name}', recipients=['ramirex9@gmail.com', 'ramirohd@gmail.com'])
-        msg.body = f'Nome: {name}\nEmail: {email}\nTelefone: {phone}\nMensagem: {message}'
+        # Preparando o e-mail
+        subject = "Formulário de Contato - Novo Envio"
+        body = f"""
+        Nome: {nome}
+        Email: {email}
+        Telefone: {telefone}
+        
+        Mensagem:
+        {mensagem}
+        """
 
-        # Enviar o e-mail
-        mail.send(msg)
+        msg = MIMEMultipart()
+        msg["From"] = EMAIL_SENDER
+        msg["To"] = EMAIL_RECEIVER
+        msg["Subject"] = subject
+        msg.attach(MIMEText(body, "plain"))
 
-        # Redireciona para a página de sucesso após enviar
-        return render_template('success.html')  # A página de sucesso deve estar no diretório correto
+        # Envia o e-mail para o primeiro destinatário
+        server.sendmail(EMAIL_SENDER, EMAIL_RECEIVER, msg.as_string())
 
+        # Envia o e-mail para o segundo destinatário
+        server.sendmail(EMAIL_SENDER, EMAIL_RECEIVER_2, msg.as_string())
+
+        # Fecha a conexão com o servidor
+        server.quit()
     except Exception as e:
         return f'Erro ao enviar mensagem: {e}'
 
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+if __name__ == "__main__":
+    app.run(debug=True)
