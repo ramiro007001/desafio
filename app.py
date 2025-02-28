@@ -1,51 +1,69 @@
-import os
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+import re
 
 app = Flask(__name__)
 
-# Página inicial com o formulário
+# Função para validar o e-mail
+def is_valid_email(email):
+    email_regex = r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)"
+    return re.match(email_regex, email)
+
 @app.route('/')
 def form():
     return render_template('form.html')
 
-# Envio do formulário
 @app.route('/send', methods=['POST'])
 def send_email():
     # Obtenha os dados do formulário
-    name = request.form['name']
-    email = request.form['email']
-    phone = request.form['phone']
-    message = request.form['message']
+    name = request.form.get('name')
+    email = request.form.get('email')
+    phone = request.form.get('phone')
+    message = request.form.get('message')
 
-    # Configurações de envio de e-mail
+    # Verificar se todos os campos foram preenchidos
+    if not name or not email or not phone or not message:
+        return "Todos os campos são obrigatórios!", 400
+
+    # Verificar formato do e-mail
+    if not is_valid_email(email):
+        return "E-mail inválido!", 400
+
+    # Configurações do servidor de e-mail
     sender_email = "ramirex9@gmail.com"
-    receiver_emails = ["ramirex9@gmail.com", "ramriohd@gmail.com"]  # Adicione os dois e-mails aqui
-    password = "dosw kveq qxlv aelt"
+    sender_password = "dosw kveq qxlv aelt"
+    receiver_email_1 = "ramirex9@gmail.com"
+    receiver_email_2 = "ramirohd@gmai.com"
+    # Preparando a mensagem
+    subject = "Novo Formulário de Contato"
+    body = f"Nome: {name}\nE-mail: {email}\nTelefone: {phone}\nMensagem: {message}"
 
-    # Criando a mensagem
     msg = MIMEMultipart()
     msg['From'] = sender_email
-    msg['To'] = ", ".join(receiver_emails)
-    msg['Subject'] = "Novo formulário enviado"
-    body = f"Nome: {name}\nE-mail: {email}\nTelefone: {phone}\nMensagem: {message}"
+    msg['To'] = receiver_email_1
+    msg['Subject'] = subject
     msg.attach(MIMEText(body, 'plain'))
 
+    msg2 = MIMEMultipart()
+    msg2['From'] = sender_email
+    msg2['To'] = receiver_email_2
+    msg2['Subject'] = subject
+    msg2.attach(MIMEText(body, 'plain'))
+
     try:
-        # Envio do e-mail
-        with smtplib.SMTP('smtp.gmail.com', 587) as server:
-            server.starttls()
-            server.login(sender_email, password)
-            text = msg.as_string()
-            server.sendmail(sender_email, receiver_emails, text)
-        
-        return render_template('success.html')  # Página de sucesso após envio do formulário
-
+        # Conectando ao servidor e enviando o e-mail
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+            server.login(sender_email, sender_password)
+            server.sendmail(sender_email, [receiver_email_1, receiver_email_2], msg.as_string())
+        return redirect(url_for('success'))
     except Exception as e:
-        return f"Erro ao enviar mensagem: {str(e)}"
+        return f"Erro ao enviar e-mail: {e}"
 
-# Inicia o servidor Flask
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)))  # Porta configurada para o Render
+@app.route('/success')
+def success():
+    return render_template('success.html')
+
+if __name__ == '__main__':
+    app.run(debug=True)
