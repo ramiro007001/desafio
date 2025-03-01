@@ -1,73 +1,42 @@
-import os
 from flask import Flask, render_template, request, redirect, url_for
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-import re
+from flask_mail import Mail, Message
 
 app = Flask(__name__)
 
-# Função para validar o e-mail
-def is_valid_email(email):
-    email_regex = r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)"
-    return re.match(email_regex, email)
+# Configurações do Flask-Mail para envio via Gmail
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = 'ramirex9@gmail.com'  # Seu e-mail principal
+app.config['MAIL_PASSWORD'] = 'dosw kveq qxlv aelt'  # Sua senha de app (senha de aplicativo gerada no Gmail)
+app.config['MAIL_DEFAULT_SENDER'] = 'ramirex9@gmail.com'  # Pode ser o mesmo do username
 
-@app.route('/')
-def form():
-    return render_template('form.html')
+mail = Mail(app)
 
-@app.route('/send', methods=['POST'])
-def send_email():
-    # Obtenha os dados do formulário
-    name = request.form.get('name')
-    email = request.form.get('email')
-    phone = request.form.get('phone')
-    message = request.form.get('message')
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    if request.method == 'POST':
+        # Coleta os dados do formulário
+        nome = request.form['name']
+        email = request.form['email']
+        telefone = request.form['phone']
+        mensagem = request.form['message']
 
-    # Verificar se todos os campos foram preenchidos
-    if not name or not email or not phone or not message:
-        return "Todos os campos são obrigatórios!", 400
-
-    # Verificar formato do e-mail
-    if not is_valid_email(email):
-        return "E-mail inválido!", 400
-
-    # Configurações do servidor de e-mail
-    sender_email = "ramirex9@gmail.com"  # Substitua com seu e-mail
-    sender_password = "dosw kveq qxlv aelt"  # Substitua com sua senha de app
-    receiver_email_1 = "ramirex9@gmail.com"  # E-mail principal
-    receiver_email_2 = "ramirohd@gmail.com"  # E-mail secundário
-
-    # Preparando a mensagem
-    subject = "Novo Formulário de Contato"
-    body = f"Nome: {name}\nE-mail: {email}\nTelefone: {phone}\nMensagem: {message}"
-
-    msg = MIMEMultipart()
-    msg['From'] = sender_email
-    msg['To'] = receiver_email_1
-    msg['Subject'] = subject
-    msg.attach(MIMEText(body, 'plain'))
-
-    msg2 = MIMEMultipart()
-    msg2['From'] = sender_email
-    msg2['To'] = receiver_email_2
-    msg2['Subject'] = subject
-    msg2.attach(MIMEText(body, 'plain'))
-
-    try:
-        # Conectando ao servidor e enviando o e-mail
-        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
-            server.login(sender_email, sender_password)
-            server.sendmail(sender_email, [receiver_email_1, receiver_email_2], msg.as_string())
-        return redirect(url_for('success'))
-    except Exception as e:
-        return f"Erro ao enviar e-mail: {e}"
+        # Cria a mensagem a ser enviada
+        msg = Message(f'Novo contato de {nome}', 
+                      recipients=['ramirex9@gmail.com', 'ramirohd@gmail.com'])
+        msg.body = f"Nome: {nome}\nEmail: {email}\nTelefone: {telefone}\nMensagem: {mensagem}"
+        
+        try:
+            mail.send(msg)
+            return redirect(url_for('success'))
+        except Exception as e:
+            return f"Erro ao enviar e-mail: {e}"
+    return render_template('index.html')
 
 @app.route('/success')
 def success():
-    return render_template('success.html')
+    return "Mensagem enviada com sucesso!"
 
 if __name__ == '__main__':
-    # Usar a porta fornecida pelo Render (ou qualquer outro serviço de hospedagem)
-    port = os.environ.get('PORT', 5000)
-    app.run(host='0.0.0.0', port=port, debug=True)
+    app.run(debug=True, host='0.0.0.0', port=5000)
