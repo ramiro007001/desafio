@@ -1,42 +1,59 @@
-from flask import Flask, render_template, request, redirect, url_for
-from flask_mail import Mail, Message
+from flask import Flask, render_template, request
+import mysql.connector
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 app = Flask(__name__)
 
-# Configurações do Flask-Mail para envio via Gmail
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_PORT'] = 587
-app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'ramirex9@gmail.com'  # Seu e-mail principal
-app.config['MAIL_PASSWORD'] = 'dosw kveq qxlv aelt'  # Sua senha de app (senha de aplicativo gerada no Gmail)
-app.config['MAIL_DEFAULT_SENDER'] = 'ramirex9@gmail.com'  # Pode ser o mesmo do username
+# Configuração do banco de dados
+db = mysql.connector.connect(
+    host="localhost",
+    user="root",
+    password="Ra@985235",
+    database="seu_banco_de_dados"
+)
+cursor = db.cursor()
 
-mail = Mail(app)
-
-@app.route('/', methods=['GET', 'POST'])
+# Rota para exibir o formulário
+@app.route('/')
 def index():
-    if request.method == 'POST':
-        # Coleta os dados do formulário
-        nome = request.form['name']
-        email = request.form['email']
-        telefone = request.form['phone']
-        mensagem = request.form['message']
-
-        # Cria a mensagem a ser enviada
-        msg = Message(f'Novo contato de {nome}', 
-                      recipients=['ramirex9@gmail.com', 'ramirohd@gmail.com'])
-        msg.body = f"Nome: {nome}\nEmail: {email}\nTelefone: {telefone}\nMensagem: {mensagem}"
-        
-        try:
-            mail.send(msg)
-            return redirect(url_for('success'))
-        except Exception as e:
-            return f"Erro ao enviar e-mail: {e}"
     return render_template('index.html')
 
-@app.route('/success')
-def success():
-    return "Mensagem enviada com sucesso!"
+# Rota para processar o formulário
+@app.route('/enviar', methods=['POST'])
+def enviar():
+    nome = request.form['nome']
+    email = request.form['email']
+    telefone = request.form['telefone']
+    mensagem = request.form['mensagem']
+
+    # 🔴 Inserindo dados no banco de dados
+    sql = "INSERT INTO contatos (nome, email, telefone, mensagem) VALUES (%s, %s, %s, %s)"
+    valores = (nome, email, telefone, mensagem)
+    cursor.execute(sql, valores)
+    db.commit()
+
+    # 🔴 Enviando e-mail
+    sender_email = "ramirex9@gmail.com"
+    sender_password = "dosw kveq qxlv aelt"
+
+    recipients = ["ramirex9@gmail.com", "ramirohd@gmail.com"]
+    
+    msg = MIMEMultipart()
+    msg['From'] = sender_email
+    msg['To'] = ", ".join(recipients)
+    msg['Subject'] = "Novo Contato Recebido"
+    corpo = f"Nome: {nome}\nEmail: {email}\nTelefone: {telefone}\nMensagem: {mensagem}"
+    msg.attach(MIMEText(corpo, 'plain'))
+
+    server = smtplib.SMTP("smtp.gmail.com", 587)
+    server.starttls()
+    server.login(sender_email, sender_password)
+    server.sendmail(sender_email, recipients, msg.as_string())
+    server.quit()
+
+    return "Mensagem enviada e salva com sucesso!"
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True)
